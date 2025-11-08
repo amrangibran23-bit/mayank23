@@ -1,4 +1,3 @@
-
 export interface UploadedFile {
   file: File;
   dataUrl: string;
@@ -16,6 +15,7 @@ export interface OrderConfig {
   quantity: number;
   finish: 'Matte' | 'Glossy';
   backgroundColor: 'Original' | 'Red' | 'Blue' | 'White';
+  costume: 'Original' | 'Kemeja Putih' | 'Jas Hitam';
 }
 
 export interface AppState {

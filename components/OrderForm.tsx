@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { OrderConfig } from '../types';
 
@@ -25,7 +24,6 @@ const ID_PHOTO_OPTIONS = [
 ]
 
 const FINISHES: ('Matte' | 'Glossy')[] = ['Matte', 'Glossy'];
-const BACKGROUND_COLORS: ('Red' | 'Blue' | 'White')[] = ['Red', 'Blue', 'White'];
 const ORDER_TYPES = [
     { id: 'print', label: 'Cetak Foto' },
     { id: 'id_photo', label: 'Pas Foto' }
@@ -46,7 +44,7 @@ const OrderForm: React.FC<OrderFormProps> = ({ photoUrl, config, onUpdate, onSub
   
   const handleOrderTypeChange = (type: 'print' | 'id_photo') => {
     const defaultSize = type === 'print' ? PRINT_OPTIONS[2].id : ID_PHOTO_OPTIONS[1].id; // Default to 4R or 3x4
-    onUpdate({ orderType: type, size: defaultSize, quantity: 1, backgroundColor: 'Original' });
+    onUpdate({ orderType: type, size: defaultSize, quantity: 1 });
   };
 
   const handleQuantityChange = (delta: number) => {
@@ -64,10 +62,15 @@ const OrderForm: React.FC<OrderFormProps> = ({ photoUrl, config, onUpdate, onSub
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
       <div className="flex flex-col items-center">
         <img src={photoUrl} alt="Final passport" className="rounded-lg shadow-lg w-full max-w-xs" />
-        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Ini adalah pratinjau foto Anda.</p>
-        {config.orderType === 'id_photo' && config.backgroundColor !== 'Original' && (
-            <p className="mt-1 text-sm font-semibold text-blue-600 dark:text-blue-400">Latar Belakang: {config.backgroundColor}</p>
-        )}
+        <div className="mt-4 text-sm text-gray-600 dark:text-gray-400 space-y-1 text-center">
+            <p>Ini adalah pratinjau foto Anda.</p>
+            {config.backgroundColor !== 'Original' && (
+                <p>Latar Belakang: <span className="font-semibold text-blue-600 dark:text-blue-400">{config.backgroundColor}</span></p>
+            )}
+             {config.costume !== 'Original' && (
+                <p>Kostum: <span className="font-semibold text-blue-600 dark:text-blue-400">{config.costume}</span></p>
+            )}
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -108,32 +111,6 @@ const OrderForm: React.FC<OrderFormProps> = ({ photoUrl, config, onUpdate, onSub
             ))}
           </div>
         </div>
-
-        {config.orderType === 'id_photo' && (
-            <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Warna Latar</h3>
-                <div className="grid grid-cols-4 gap-2">
-                    <button
-                        onClick={() => onUpdate({ backgroundColor: 'Original' })}
-                        className={`p-3 rounded-md text-sm font-medium border-2 transition-colors ${
-                            config.backgroundColor === 'Original' ? 'bg-blue-500 border-blue-500 text-white' : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
-                        }`}
-                    >Asli</button>
-                    {BACKGROUND_COLORS.map(color => (
-                        <button
-                            key={color}
-                            onClick={() => onUpdate({ backgroundColor: color })}
-                            className={`p-3 rounded-md text-sm font-medium border-2 transition-colors capitalize flex items-center justify-center gap-2 ${
-                                config.backgroundColor === color ? 'border-blue-500 ring-2 ring-blue-500' : 'border-gray-300 dark:border-gray-600'
-                            }`}
-                        >
-                            <span className={`w-4 h-4 rounded-full ${color === 'Red' ? 'bg-red-600' : color === 'Blue' ? 'bg-blue-600' : 'bg-white border'}`}></span>
-                            {color}
-                        </button>
-                    ))}
-                </div>
-            </div>
-        )}
 
         <div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Jumlah</h3>

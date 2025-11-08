@@ -1,12 +1,11 @@
-
 import React, { useState, useCallback } from 'react';
-import { AppState, PhotoAnalysisResult, OrderConfig, UploadedFile } from './types';
+import { AppState, OrderConfig, UploadedFile } from './types';
 import Stepper from './components/Stepper';
 import FileUpload from './components/FileUpload';
 import PhotoAnalysis from './components/PhotoAnalysis';
 import OrderForm from './components/OrderForm';
 import Confirmation from './components/Confirmation';
-import { analyzePassportPhoto, enhancePhotoBackground } from './services/geminiService';
+import { analyzePassportPhoto, enhancePhotoBackground, changeCostume } from './services/geminiService';
 
 const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>({
@@ -20,6 +19,7 @@ const App: React.FC = () => {
       quantity: 1,
       finish: 'Matte',
       backgroundColor: 'Original',
+      costume: 'Original',
     },
     isLoading: false,
     error: null,
@@ -39,21 +39,37 @@ const App: React.FC = () => {
       setAppState(prev => ({ ...prev, analysisResult: result, isLoading: false }));
     } catch (e) {
       console.error(e);
-      setAppState(prev => ({ ...prev, isLoading: false, error: 'Failed to analyze photo. Please try again.' }));
+      setAppState(prev => ({ ...prev, isLoading: false, error: 'Gagal menganalisis foto. Silakan coba lagi.' }));
     }
   }, [uploadedFile]);
 
-  const handleEnhancement = useCallback(async () => {
-    if (!uploadedFile) return;
-    setAppState(prev => ({ ...prev, isLoading: true, error: null }));
-    try {
-      const newImageBase64 = await enhancePhotoBackground(uploadedFile.base64);
-      setAppState(prev => ({ ...prev, enhancedImage: `data:image/png;base64,${newImageBase64}`, isLoading: false }));
-    } catch (e) {
-      console.error(e);
-      setAppState(prev => ({ ...prev, isLoading: false, error: 'Failed to enhance photo. Please try again.' }));
-    }
-  }, [uploadedFile]);
+  const handleImageEnhancement = useCallback(async (
+    type: 'background' | 'costume', 
+    value: 'Red' | 'Blue' | 'White' | 'Kemeja Putih' | 'Jas Hitam'
+  ) => {
+      if (!uploadedFile) return;
+
+      const baseImage = enhancedImage ? enhancedImage.split(',')[1] : uploadedFile.base64;
+      setAppState(prev => ({ ...prev, isLoading: true, error: null }));
+
+      try {
+          let newImageBase64: string;
+          if (type === 'background') {
+              newImageBase64 = await enhancePhotoBackground(baseImage, value as 'Red' | 'Blue' | 'White');
+              setAppState(prev => ({ ...prev, orderConfig: { ...prev.orderConfig, backgroundColor: value as 'Red' | 'Blue' | 'White' }}));
+          } else { // costume
+              newImageBase64 = await changeCostume(baseImage, value as 'Kemeja Putih' | 'Jas Hitam');
+              setAppState(prev => ({ ...prev, orderConfig: { ...prev.orderConfig, costume: value as 'Kemeja Putih' | 'Jas Hitam' }}));
+          }
+          setAppState(prev => ({ ...prev, enhancedImage: `data:image/png;base64,${newImageBase64}` }));
+      } catch (e) {
+          console.error(e);
+          setAppState(prev => ({ ...prev, error: `Gagal menerapkan peningkatan ${type}.` }));
+      } finally {
+          setAppState(prev => ({ ...prev, isLoading: false }));
+      }
+  }, [uploadedFile, enhancedImage]);
+
 
   const handleProceedToOrder = () => {
     setAppState(prev => ({ ...prev, currentStep: 3 }));
@@ -82,6 +98,7 @@ const App: React.FC = () => {
         quantity: 1,
         finish: 'Matte',
         backgroundColor: 'Original',
+        costume: 'Original',
       },
       isLoading: false,
       error: null,
@@ -99,7 +116,7 @@ const App: React.FC = () => {
             analysisResult={analysisResult}
             enhancedImage={enhancedImage}
             onAnalyze={handleAnalysis}
-            onEnhance={handleEnhancement}
+            onEnhance={handleImageEnhancement}
             onProceed={handleProceedToOrder}
             isLoading={isLoading}
             error={error}
@@ -119,6 +136,7 @@ const App: React.FC = () => {
             <Confirmation 
                 isLoading={isLoading}
                 onReset={handleReset}
+                orderConfig={orderConfig}
             />
          );
       default:

@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Modality } from '@google/genai';
 import { PhotoAnalysisResult } from '../types';
 
@@ -68,9 +67,9 @@ export const analyzePassportPhoto = async (imageBase64: string): Promise<PhotoAn
   }
 };
 
-export const enhancePhotoBackground = async (imageBase64: string): Promise<string> => {
+export const enhancePhotoBackground = async (imageBase64: string, color: 'Red' | 'Blue' | 'White'): Promise<string> => {
     const model = 'gemini-2.5-flash-image';
-    const prompt = "Replace the background of this portrait with a solid, plain, off-white color suitable for an official passport photo. Ensure the subject's hair, clothing, and outline are preserved perfectly with no artifacts. The final image should only contain the person and the new plain background.";
+    const prompt = `Replace the background of this portrait with a solid, plain, ${color.toLowerCase()} color suitable for an official ID photo. Ensure the subject's hair, clothing, and outline are preserved perfectly with no artifacts. The final image should only contain the person and the new plain background.`;
 
     const imagePart = {
         inlineData: {
@@ -99,5 +98,45 @@ export const enhancePhotoBackground = async (imageBase64: string): Promise<strin
     } catch (error) {
         console.error("Error enhancing photo background with Gemini:", error);
         throw new Error("Failed to communicate with the AI enhancement service.");
+    }
+};
+
+export const changeCostume = async (imageBase64: string, costume: 'Kemeja Putih' | 'Jas Hitam'): Promise<string> => {
+    const model = 'gemini-2.5-flash-image';
+    
+    let prompt: string;
+    if (costume === 'Kemeja Putih') {
+        prompt = "Digitally and realistically replace the clothing on the person in this photo with a formal white collared shirt, suitable for a professional ID photo. Preserve the person's head, face, and the existing background. The result should look natural and high-quality.";
+    } else { // Jas Hitam
+        prompt = "Digitally and realistically replace the clothing on the person in this photo with a formal black suit jacket over a white collared shirt, suitable for a professional ID photo. Preserve the person's head, face, and the existing background. The result should look natural and high-quality.";
+    }
+
+    const imagePart = {
+        inlineData: {
+          data: imageBase64,
+          mimeType: 'image/jpeg',
+        },
+      };
+
+    const textPart = { text: prompt };
+
+    try {
+        const response = await ai.models.generateContent({
+            model: model,
+            contents: { parts: [imagePart, textPart] },
+            config: {
+                responseModalities: [Modality.IMAGE],
+            },
+        });
+
+        const firstPart = response.candidates?.[0]?.content?.parts?.[0];
+        if (firstPart && firstPart.inlineData) {
+            return firstPart.inlineData.data;
+        } else {
+            throw new Error("No image data returned from costume change service.");
+        }
+    } catch (error) {
+        console.error("Error changing costume with Gemini:", error);
+        throw new Error("Failed to communicate with the AI costume change service.");
     }
 };
